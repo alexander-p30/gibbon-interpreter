@@ -6,7 +6,7 @@ import (
 )
 
 func TestNextTokenWithBaseTokens(t *testing.T) {
-	input := `=+(){},;`
+	input := `=+(){},;-!*/<>`
 
 	tests := []struct {
 		expectedType    token.TokenType
@@ -20,6 +20,12 @@ func TestNextTokenWithBaseTokens(t *testing.T) {
 		{token.RBRACE, "}"},
 		{token.COMMA, ","},
 		{token.SEMICOLON, ";"},
+		{token.MINUS, "-"},
+		{token.BANG, "!"},
+		{token.ASTERISK, "*"},
+		{token.SLASH, "/"},
+		{token.LT, "<"},
+		{token.GT, ">"},
 		{token.EOF, ""},
 	}
 
@@ -45,6 +51,10 @@ func TestNextTokenWithCode(t *testing.T) {
   let add = fn(x, y) { 
     x + y;
   };
+
+  if(!true) {
+    return false;
+  }
 
   let result = add(five, ten);
   `
@@ -79,6 +89,16 @@ func TestNextTokenWithCode(t *testing.T) {
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
 		{token.SEMICOLON, ";"},
+		{token.IF, "if"},
+		{token.LPAREN, "("},
+		{token.BANG, "!"},
+		{token.TRUE, "true"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
 		{token.LET, "let"},
 		{token.IDENT, "result"},
 		{token.ASSIGN, "="},
