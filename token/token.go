@@ -17,8 +17,14 @@ const (
 	INT   = "INT"
 
 	// Operators
-	ASSIGN = "="
-	PLUS   = "+"
+	ASSIGN   = "="
+	PLUS     = "+"
+	MINUS    = "-"
+	BANG     = "!"
+	ASTERISK = "*"
+	SLASH    = "/"
+	LT       = "<"
+	GT       = ">"
 
 	// Delimiters
 	COMMA     = ","
@@ -30,12 +36,20 @@ const (
 
 	// Keywords
 	FUNCTION = "FUNCTION"
+	RETURN   = "RETURN"
 	LET      = "LET"
+	IF       = "IF"
+	TRUE     = "TRUE"
+	FALSE    = "FALSE"
 )
 
 var keywordTypes = map[string]TokenType{
-	"fn":  FUNCTION,
-	"let": LET,
+	"fn":     FUNCTION,
+	"return": RETURN,
+	"let":    LET,
+	"if":     IF,
+	"true":   TRUE,
+	"false":  FALSE,
 }
 
 func GetIdentTokenType(identifier string) TokenType {
