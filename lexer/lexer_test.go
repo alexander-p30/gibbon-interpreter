@@ -6,7 +6,7 @@ import (
 )
 
 func TestNextTokenWithBaseTokens(t *testing.T) {
-	input := `=+(){},;-!*/<>`
+	input := `=+(){},;-!*/< >`
 
 	tests := []struct {
 		expectedType    token.TokenType
@@ -56,6 +56,9 @@ func TestNextTokenWithCode(t *testing.T) {
     return false;
   }
 
+  5 == 10
+  >= <= <> !=
+
   let result = add(five, ten);
   `
 
@@ -99,6 +102,13 @@ func TestNextTokenWithCode(t *testing.T) {
 		{token.FALSE, "false"},
 		{token.SEMICOLON, ";"},
 		{token.RBRACE, "}"},
+		{token.INT, "5"},
+		{token.EQUAL, "=="},
+		{token.INT, "10"},
+		{token.GTE, ">="},
+		{token.LTE, "<="},
+		{token.ILLEGAL, "<>"},
+		{token.DIFFERENT, "!="},
 		{token.LET, "let"},
 		{token.IDENT, "result"},
 		{token.ASSIGN, "="},
