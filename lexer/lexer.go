@@ -37,22 +37,14 @@ func (l *Lexer) NextToken() token.Token {
 	l.skipWhitespace()
 	switch l.currentChar {
 	// Operators
-	case '=':
-		nextToken = newToken(token.ASSIGN, l.currentChar)
 	case '+':
 		nextToken = newToken(token.PLUS, l.currentChar)
 	case '-':
 		nextToken = newToken(token.MINUS, l.currentChar)
-	case '!':
-		nextToken = newToken(token.BANG, l.currentChar)
 	case '*':
 		nextToken = newToken(token.ASTERISK, l.currentChar)
 	case '/':
 		nextToken = newToken(token.SLASH, l.currentChar)
-	case '<':
-		nextToken = newToken(token.LT, l.currentChar)
-	case '>':
-		nextToken = newToken(token.GT, l.currentChar)
 
 		// Delimiters
 	case ',':
@@ -73,13 +65,17 @@ func (l *Lexer) NextToken() token.Token {
 		nextToken.Literal = ""
 		nextToken.Type = token.EOF
 	default:
-		if isCharValidInIdentifier(l.currentChar) {
-			nextToken.Literal = l.readIdentifier()
+		if isOperator(l.currentChar) {
+			nextToken.Literal = l.readMultiCharToken(isOperator)
+			nextToken.Type = token.GetOperatorTokenType(nextToken.Literal)
+			return nextToken
+		} else if isValidInIdentifier(l.currentChar) {
+			nextToken.Literal = l.readMultiCharToken(isValidInIdentifier)
 			nextToken.Type = token.GetIdentTokenType(nextToken.Literal)
 			return nextToken
 		} else if isDigit(l.currentChar) {
 			nextToken.Type = token.INT
-			nextToken.Literal = l.readNumber()
+			nextToken.Literal = l.readMultiCharToken(isDigit)
 			return nextToken
 		} else {
 			newToken(token.ILLEGAL, l.currentChar)
@@ -91,28 +87,8 @@ func (l *Lexer) NextToken() token.Token {
 	return nextToken
 }
 
-func (l *Lexer) readIdentifier() string {
-	firstIdentifierCharPosition := l.currentCharPosition
-
-	for isCharValidInIdentifier(l.currentChar) {
-		l.readChar()
-	}
-
-	return l.input[firstIdentifierCharPosition:l.currentCharPosition]
-}
-
-func isCharValidInIdentifier(char byte) bool {
+func isValidInIdentifier(char byte) bool {
 	return 'a' <= char && char <= 'z' || 'A' <= char && char <= 'Z' || char == '_'
-}
-
-func (l *Lexer) readNumber() string {
-	firstIdentifierCharPosition := l.currentCharPosition
-
-	for isDigit(l.currentChar) {
-		l.readChar()
-	}
-
-	return l.input[firstIdentifierCharPosition:l.currentCharPosition]
 }
 
 func isDigit(char byte) bool {
@@ -123,6 +99,28 @@ func (l *Lexer) skipWhitespace() {
 	for l.currentChar == ' ' || l.currentChar == '\t' || l.currentChar == '\n' || l.currentChar == '\r' {
 		l.readChar()
 	}
+}
+
+var multiCharOperatorsInitials = [...]byte{token.LTE[0], token.GTE[0], token.EQUAL[0], token.DIFFERENT[0]}
+
+func isOperator(char byte) bool {
+	for _, multiCharOperatorInitial := range multiCharOperatorsInitials {
+		if char == multiCharOperatorInitial {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (l *Lexer) readMultiCharToken(verifierFunc func(byte) bool) string {
+	firstTokenCharPosition := l.currentCharPosition
+
+	for verifierFunc(l.currentChar) {
+		l.readChar()
+	}
+
+	return l.input[firstTokenCharPosition:l.currentCharPosition]
 }
 
 func newToken(tokenType token.TokenType, tokenChar byte) token.Token {

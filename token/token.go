@@ -17,14 +17,18 @@ const (
 	INT   = "INT"
 
 	// Operators
-	ASSIGN   = "="
-	PLUS     = "+"
-	MINUS    = "-"
-	BANG     = "!"
-	ASTERISK = "*"
-	SLASH    = "/"
-	LT       = "<"
-	GT       = ">"
+	ASSIGN    = "="
+	PLUS      = "+"
+	MINUS     = "-"
+	BANG      = "!"
+	ASTERISK  = "*"
+	SLASH     = "/"
+	LT        = "<"
+	GT        = ">"
+	LTE       = "<="
+	GTE       = ">="
+	EQUAL     = "=="
+	DIFFERENT = "!="
 
 	// Delimiters
 	COMMA     = ","
@@ -50,6 +54,18 @@ var keywordTypes = map[string]TokenType{
 	"if":     IF,
 	"true":   TRUE,
 	"false":  FALSE,
+}
+
+var operators = [...]string{ASSIGN, BANG, LT, GT, LTE, GTE, EQUAL, DIFFERENT}
+
+func GetOperatorTokenType(operator string) TokenType {
+	for _, tokenType := range operators {
+		if tokenType == operator {
+			return TokenType(tokenType)
+		}
+	}
+
+	return ILLEGAL
 }
 
 func GetIdentTokenType(identifier string) TokenType {
