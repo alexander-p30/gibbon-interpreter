@@ -2,33 +2,49 @@ package lexer
 
 import (
 	"gibbon/token"
+	"io"
 )
 
-const EOL_CHAR = 0
+const EOF_CHAR = 0
 
-type Lexer struct {
-	input               string // input being parsed
-	currentCharPosition int    // current position on input (current char position)
-	nextCharPosition    int    // current reading position (next char to be parsed position)
-	currentChar         byte   // current char in examination
+type bytePosition struct {
+	byte uint
+	line uint
 }
 
-// TODO receive file name and io.Reader to allow for file position storage
-func NewLexer(input string) *Lexer {
+type Lexer struct {
+	input               io.ByteReader // input being parsed
+	fileName            string        // name of the file being lexed
+	currentChar         byte          // current char in examination
+	currentCharPosition bytePosition  // current byte position on file being parsed
+	nextCharPosition    bytePosition  // next byte position on file being parsed
+	eofReached          bool          // indicates wether has been completely read
+}
+
+func NewLexer(input io.ByteReader, fileName string) *Lexer {
 	l := &Lexer{input: input}
 	l.readChar()
 	return l
 }
 
 func (l *Lexer) readChar() {
-	if l.nextCharPosition >= len(l.input) {
-		l.currentChar = EOL_CHAR
-	} else {
-		l.currentChar = l.input[l.nextCharPosition]
+	if l.eofReached {
+		l.currentCharPosition = l.nextCharPosition
+		return
 	}
 
+	byte, err := l.input.ReadByte()
+	l.eofReached = err == io.EOF
+	l.currentChar = byte
+
 	l.currentCharPosition = l.nextCharPosition
-	l.nextCharPosition++
+
+	if byte == '\n' {
+		l.nextCharPosition.line++
+		l.nextCharPosition.byte = 0
+	} else {
+		l.nextCharPosition.byte++
+	}
 }
 
 func (l *Lexer) NextToken() token.Token {
@@ -38,47 +54,51 @@ func (l *Lexer) NextToken() token.Token {
 	switch l.currentChar {
 	// Operators
 	case '+':
-		nextToken = newToken(token.PLUS, l.currentChar)
+		nextToken = newToken(token.PLUS, l.currentChar, l.currentCharPosition)
 	case '-':
-		nextToken = newToken(token.MINUS, l.currentChar)
+		nextToken = newToken(token.MINUS, l.currentChar, l.currentCharPosition)
 	case '*':
-		nextToken = newToken(token.ASTERISK, l.currentChar)
+		nextToken = newToken(token.ASTERISK, l.currentChar, l.currentCharPosition)
 	case '/':
-		nextToken = newToken(token.SLASH, l.currentChar)
+		nextToken = newToken(token.SLASH, l.currentChar, l.currentCharPosition)
 
 		// Delimiters
 	case ',':
-		nextToken = newToken(token.COMMA, l.currentChar)
+		nextToken = newToken(token.COMMA, l.currentChar, l.currentCharPosition)
 	case ';':
-		nextToken = newToken(token.SEMICOLON, l.currentChar)
+		nextToken = newToken(token.SEMICOLON, l.currentChar, l.currentCharPosition)
 	case '(':
-		nextToken = newToken(token.LPAREN, l.currentChar)
+		nextToken = newToken(token.LPAREN, l.currentChar, l.currentCharPosition)
 	case ')':
-		nextToken = newToken(token.RPAREN, l.currentChar)
+		nextToken = newToken(token.RPAREN, l.currentChar, l.currentCharPosition)
 	case '{':
-		nextToken = newToken(token.LBRACE, l.currentChar)
+		nextToken = newToken(token.LBRACE, l.currentChar, l.currentCharPosition)
 	case '}':
-		nextToken = newToken(token.RBRACE, l.currentChar)
+		nextToken = newToken(token.RBRACE, l.currentChar, l.currentCharPosition)
 
 		// Special
-	case EOL_CHAR:
+	case EOF_CHAR:
+		nextToken.Location = token.TokenLocation{Line: l.currentCharPosition.line, FirstCharIndex: l.currentCharPosition.byte}
 		nextToken.Literal = ""
 		nextToken.Type = token.EOF
 	default:
 		if isOperator(l.currentChar) {
+			nextToken.Location = token.TokenLocation{Line: l.currentCharPosition.line, FirstCharIndex: l.currentCharPosition.byte}
 			nextToken.Literal = l.readMultiCharToken(isOperator)
 			nextToken.Type = token.GetOperatorTokenType(nextToken.Literal)
 			return nextToken
 		} else if isValidInIdentifier(l.currentChar) {
+			nextToken.Location = token.TokenLocation{Line: l.currentCharPosition.line, FirstCharIndex: l.currentCharPosition.byte}
 			nextToken.Literal = l.readMultiCharToken(isValidInIdentifier)
 			nextToken.Type = token.GetIdentTokenType(nextToken.Literal)
 			return nextToken
 		} else if isDigit(l.currentChar) {
+			nextToken.Location = token.TokenLocation{Line: l.currentCharPosition.line, FirstCharIndex: l.currentCharPosition.byte}
 			nextToken.Type = token.INT
 			nextToken.Literal = l.readMultiCharToken(isDigit)
 			return nextToken
 		} else {
-			newToken(token.ILLEGAL, l.currentChar)
+			newToken(token.ILLEGAL, l.currentChar, l.nextCharPosition)
 		}
 	}
 
@@ -114,15 +134,17 @@ func isOperator(char byte) bool {
 }
 
 func (l *Lexer) readMultiCharToken(verifierFunc func(byte) bool) string {
-	firstTokenCharPosition := l.currentCharPosition
+	readChars := []byte{}
 
 	for verifierFunc(l.currentChar) {
+		readChars = append(readChars, l.currentChar)
 		l.readChar()
 	}
 
-	return l.input[firstTokenCharPosition:l.currentCharPosition]
+	return string(readChars)
 }
 
-func newToken(tokenType token.TokenType, tokenChar byte) token.Token {
-	return token.Token{Type: tokenType, Literal: string(tokenChar)}
+func newToken(tokenType token.TokenType, tokenChar byte, bytePosition bytePosition) token.Token {
+	t := token.Token{Type: tokenType, Literal: string(tokenChar), Location: token.TokenLocation{Line: bytePosition.line, FirstCharIndex: bytePosition.byte}}
+	return t
 }

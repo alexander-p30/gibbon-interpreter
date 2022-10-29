@@ -2,9 +2,15 @@ package token
 
 type TokenType string
 
+type TokenLocation struct {
+	Line           uint
+	FirstCharIndex uint
+}
+
 type Token struct {
-	Type    TokenType
-	Literal string
+	Type     TokenType
+	Literal  string
+	Location TokenLocation
 }
 
 const (
