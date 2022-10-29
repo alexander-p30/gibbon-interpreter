@@ -71,7 +71,7 @@ func TestNextTokenWithCode(t *testing.T) {
   >= <= <> !=
 
   let result = add(five, ten);
-  `))
+  ''`))
 
 	tests := []struct {
 		expectedType              token.TokenType
@@ -132,7 +132,9 @@ func TestNextTokenWithCode(t *testing.T) {
 		{token.IDENT, "ten", 14, 25},
 		{token.RPAREN, ")", 14, 28},
 		{token.SEMICOLON, ";", 14, 29},
-		{token.EOF, "", 15, 2},
+		{token.ILLEGAL, "'", 15, 2},
+		{token.ILLEGAL, "'", 15, 3},
+		{token.EOF, "", 15, 4},
 	}
 
 	l := NewLexer(input, "filename")

@@ -28,18 +28,16 @@ func NewLexer(input io.ByteReader, fileName string) *Lexer {
 }
 
 func (l *Lexer) readChar() {
-	if l.eofReached {
-		l.currentCharPosition = l.nextCharPosition
-		return
-	}
-
 	byte, err := l.input.ReadByte()
-	l.eofReached = err == io.EOF
+
 	l.currentChar = byte
 
 	l.currentCharPosition = l.nextCharPosition
 
-	if byte == '\n' {
+	if err == io.EOF {
+		l.currentCharPosition = l.nextCharPosition
+		return
+	} else if byte == '\n' {
 		l.nextCharPosition.line++
 		l.nextCharPosition.byte = 0
 	} else {
@@ -98,7 +96,7 @@ func (l *Lexer) NextToken() token.Token {
 			nextToken.Literal = l.readMultiCharToken(isDigit)
 			return nextToken
 		} else {
-			newToken(token.ILLEGAL, l.currentChar, l.nextCharPosition)
+			nextToken = newToken(token.ILLEGAL, l.currentChar, l.currentCharPosition)
 		}
 	}
 
@@ -145,6 +143,5 @@ func (l *Lexer) readMultiCharToken(verifierFunc func(byte) bool) string {
 }
 
 func newToken(tokenType token.TokenType, tokenChar byte, bytePosition bytePosition) token.Token {
-	t := token.Token{Type: tokenType, Literal: string(tokenChar), Location: token.TokenLocation{Line: bytePosition.line, FirstCharIndex: bytePosition.byte}}
-	return t
+	return token.Token{Type: tokenType, Literal: string(tokenChar), Location: token.TokenLocation{Line: bytePosition.line, FirstCharIndex: bytePosition.byte}}
 }
