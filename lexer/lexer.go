@@ -22,9 +22,13 @@ type Lexer struct {
 }
 
 func NewLexer(input io.ByteReader, fileName string) *Lexer {
-	l := &Lexer{input: input}
+	l := &Lexer{input: input, fileName: fileName}
 	l.readChar()
 	return l
+}
+
+func (l *Lexer) SourceFile() string {
+	return l.fileName
 }
 
 func (l *Lexer) readChar() {
