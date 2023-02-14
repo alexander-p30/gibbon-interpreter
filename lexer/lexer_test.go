@@ -3,10 +3,13 @@ package lexer
 import (
 	"bytes"
 	"gibbon/token"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestNextTokenWithBaseTokens(t *testing.T) {
+	assert := assert.New(t)
+
 	input := bytes.NewReader([]byte(`=(+){},;-!*/< >`))
 
 	tests := []struct {
@@ -34,28 +37,27 @@ func TestNextTokenWithBaseTokens(t *testing.T) {
 
 	l := NewLexer(input, "filename")
 
-	for idx, test := range tests {
+	for _, test := range tests {
 		token := l.NextToken()
 
-		if token.Type != test.expectedType {
-			t.Fatalf("Test [%d]\n\tExpected: %+v\n\tGot: %+v", idx, test.expectedType, token.Type)
+		if !assert.Equal(token.Type, test.expectedType) {
+			assert.FailNow("")
 		}
-
-		if token.Literal != test.expectedLiteral {
-			t.Fatalf("Test [%d]\n\tExpected: %+v\n\tGot: %+v", idx, test.expectedLiteral, token.Literal)
+		if !assert.Equal(token.Literal, test.expectedLiteral) {
+			assert.FailNow("")
 		}
-
-		if token.Location.Line != test.expectedLocationLine {
-			t.Fatalf("Test [%d]\n\tExpected line: %d\n\tGot: %d", idx, test.expectedLocationLine, token.Location.Line)
+		if !assert.Equal(token.Location.Line, test.expectedLocationLine) {
+			assert.FailNow("")
 		}
-
-		if token.Location.FirstCharIndex != test.expectedLocationFirstChar {
-			t.Fatalf("Test [%d]\n\tExpected char index: %d\n\tGot: %d", idx, test.expectedLocationFirstChar, token.Location.FirstCharIndex)
+		if !assert.Equal(token.Location.FirstCharIndex, test.expectedLocationFirstChar) {
+			assert.FailNow("")
 		}
 	}
 }
 
 func TestNextTokenWithCode(t *testing.T) {
+	assert := assert.New(t)
+
 	input := bytes.NewReader([]byte(`let five = 5;
   let ten = 10;
 
@@ -139,23 +141,20 @@ func TestNextTokenWithCode(t *testing.T) {
 
 	l := NewLexer(input, "filename")
 
-	for idx, test := range tests {
+	for _, test := range tests {
 		token := l.NextToken()
 
-		if token.Type != test.expectedType {
-			t.Fatalf("Test [%d]\n\tWrong token type!\n\tExpected: %+v\n\tGot: %+v", idx, test, token)
+		if !assert.Equal(token.Type, test.expectedType) {
+			assert.FailNow("")
 		}
-
-		if token.Literal != test.expectedLiteral {
-			t.Fatalf("Test [%d]\n\tWrong token literal!\n\tExpected: %+v\n\tGot: %+v", idx, test, token)
+		if !assert.Equal(token.Literal, test.expectedLiteral) {
+			assert.FailNow("")
 		}
-
-		if token.Location.Line != test.expectedLocationLine {
-			t.Fatalf("Test [%d]\n\tExpected line: %d\n\tGot: %d", idx, test.expectedLocationLine, token.Location.Line)
+		if !assert.Equal(token.Location.Line, test.expectedLocationLine) {
+			assert.FailNow("")
 		}
-
-		if token.Location.FirstCharIndex != test.expectedLocationFirstChar {
-			t.Fatalf("Test [%d]\n\tExpected char index: %d\n\tGot: %d", idx, test.expectedLocationFirstChar, token.Location.FirstCharIndex)
+		if !assert.Equal(token.Location.FirstCharIndex, test.expectedLocationFirstChar) {
+			assert.FailNow("")
 		}
 	}
 }
