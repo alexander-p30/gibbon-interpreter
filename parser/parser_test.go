@@ -119,13 +119,7 @@ func TestIntegerLiteral(t *testing.T) {
 		assert.FailNow("")
 	}
 
-	integer, ok := integerExpression.Expression.(*ast.IntegerLiteral)
-	if !assert.True(ok, "statement not of type *ast.IntegerLiteral") {
-		assert.FailNow(fmt.Sprintf("%q", integerExpression))
-	}
-
-	assert.Equal(integer.Value, int64(3))
-	assert.Equal(integer.TokenLiteral(), "3")
+	testIntegerLiteral(t, integerExpression.Expression, 3)
 }
 
 func TestReturnStatements(t *testing.T) {
@@ -171,6 +165,8 @@ func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier strin
 	return true
 }
 
+// ------HELPERS------
+
 func ensureNoErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 
@@ -192,4 +188,16 @@ func ensureNoErrors(t *testing.T, p *Parser) {
 	}
 
 	t.FailNow()
+}
+
+func testIntegerLiteral(t *testing.T, exp ast.Expression, expectedValue int64) *ast.IntegerLiteral {
+	integer, ok := exp.(*ast.IntegerLiteral)
+	if !assert.True(t, ok, "statement not of type *ast.IntegerLiteral") {
+		assert.FailNow(t, "")
+	}
+
+	assert.Equal(t, integer.Value, int64(3))
+	assert.Equal(t, integer.TokenLiteral(), fmt.Sprintf("%d", expectedValue))
+
+	return integer
 }
