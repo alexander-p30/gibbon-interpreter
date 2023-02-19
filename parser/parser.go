@@ -5,6 +5,7 @@ import (
 	"gibbon/ast"
 	"gibbon/lexer"
 	"gibbon/token"
+	"strconv"
 )
 
 type prefixParserFn func() ast.Expression
@@ -42,6 +43,7 @@ func (p *Parser) initializeInfixParsers() {
 func (p *Parser) initializePrefixParsers() {
 	p.prefixExpressionParser = make(map[token.TokenType]prefixParserFn)
 	p.registerPrefixParser(token.IDENT, p.parseIdentifier)
+	p.registerPrefixParser(token.INT, p.parseIntegerLiteral)
 }
 
 func (p *Parser) registerPrefixParser(t token.TokenType, parser prefixParserFn) {
@@ -59,6 +61,18 @@ func (p *Parser) nextToken() {
 
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	value, err := strconv.ParseInt(p.currentToken.Literal, 10, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("Could not parse '%q' as integer literal", p.currentToken.Literal)
+		p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
+		return nil
+	}
+
+	return &ast.IntegerLiteral{Token: p.currentToken, Value: value}
 }
 
 func (p *Parser) ParseProgram() *ast.Program {

@@ -99,6 +99,63 @@ func TestIdentifierExpression(t *testing.T) {
 	assert.Equal(identifier.Value, "someIdentifier")
 	assert.Equal(identifier.TokenLiteral(), "someIdentifier")
 }
+
+func TestIntegerLiteral(t *testing.T) {
+	assert := assert.New(t)
+
+	input := []byte(`3;`)
+	l := lexer.NewLexer(bytes.NewReader(input), "input")
+	parser := NewParser(l)
+	program := parser.ParseProgram()
+	ensureNoErrors(t, parser)
+
+	stmts := program.Statements
+
+	assert.Len(stmts, 1)
+
+	statement := program.Statements[0]
+	integerExpression, ok := statement.(*ast.ExpressionStatement)
+	if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+		assert.FailNow("")
+	}
+
+	integer, ok := integerExpression.Expression.(*ast.IntegerLiteral)
+	if !assert.True(ok, "statement not of type *ast.IntegerLiteral") {
+		assert.FailNow(fmt.Sprintf("%q", integerExpression))
+	}
+
+	assert.Equal(integer.Value, int64(3))
+	assert.Equal(integer.TokenLiteral(), "3")
+}
+
+func TestReturnStatements(t *testing.T) {
+	assert := assert.New(t)
+
+	input := []byte(`
+return 5;
+return 10;
+return 993322;
+`)
+	l := lexer.NewLexer(bytes.NewReader(input), "input")
+	parser := NewParser(l)
+	program := parser.ParseProgram()
+	ensureNoErrors(t, parser)
+
+	stmts := program.Statements
+
+	assert.Len(stmts, 3, "Program statements do not contain 3 statemens.")
+
+	for _, stmt := range stmts {
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
+
+		if !assert.Truef(ok, "stmt not *ast.ReturnStatement. got=%T", stmt) {
+			continue
+		}
+
+		assert.Equal(returnStmt.TokenLiteral(), "return", "returnStmt.TokenLiteral not 'return'")
+	}
+}
+
 func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier string) bool {
 	assert := assert.New(t)
 
