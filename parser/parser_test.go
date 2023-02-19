@@ -2,10 +2,12 @@ package parser
 
 import (
 	"bytes"
+	"fmt"
 	"gibbon/ast"
 	"gibbon/lexer"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLetStatementParse(t *testing.T) {
@@ -57,7 +59,7 @@ let 1;
 	parser.ParseProgram()
 	errors := parser.Errors()
 
-	if !assert.Len(errors, 4) {
+	if !assert.Len(errors, 2) {
 		for i, err := range errors {
 			t.Errorf("Error [%d] %s:%d:%d: \"%s\"",
 				i,
@@ -70,6 +72,33 @@ let 1;
 	}
 }
 
+func TestIdentifierExpression(t *testing.T) {
+	assert := assert.New(t)
+
+	input := []byte(`someIdentifier;`)
+	l := lexer.NewLexer(bytes.NewReader(input), "input")
+	parser := NewParser(l)
+	program := parser.ParseProgram()
+	ensureNoErrors(t, parser)
+
+	stmts := program.Statements
+
+	assert.Len(stmts, 1)
+
+	statement := program.Statements[0]
+	identifierExpression, ok := statement.(*ast.ExpressionStatement)
+	if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+		assert.FailNow("")
+	}
+
+	identifier, ok := identifierExpression.Expression.(*ast.Identifier)
+	if !assert.True(ok, "statement not of type *ast.Identifier") {
+		assert.FailNow("")
+	}
+
+	assert.Equal(identifier.Value, "someIdentifier")
+	assert.Equal(identifier.TokenLiteral(), "someIdentifier")
+}
 func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier string) bool {
 	assert := assert.New(t)
 
