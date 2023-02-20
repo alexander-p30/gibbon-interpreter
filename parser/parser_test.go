@@ -211,6 +211,47 @@ func TestInfixExpression(t *testing.T) {
 	}
 }
 
+func TestExpressionOperatorPrecedence(t *testing.T) {
+	tests := []struct {
+		input          []byte
+		expectedString string
+	}{
+		{[]byte(`3 - 2`), "(3 - 2)"},
+		{[]byte(`a + b + c`), "((a + b) + c)"},
+		{[]byte(`a + b * c`), "(a + (b * c))"},
+		{[]byte(`a * b / c + d`), "(((a * b) / c) + d)"},
+		{[]byte(`!a <= b`), "((!a) <= b)"},
+		{[]byte(`3 + 4 * 5 == 3 * 1 + 4 * 5`), "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"},
+	}
+
+	for _, test := range tests {
+		assert := assert.New(t)
+
+		l := lexer.NewLexer(bytes.NewReader(test.input), "input")
+		parser := NewParser(l)
+		program := parser.ParseProgram()
+
+		ensureNoErrors(t, parser)
+
+		assert.Len(program.Statements, 1)
+
+		statement := program.Statements[0]
+		stmt, ok := statement.(*ast.ExpressionStatement)
+		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+			assert.FailNow("")
+		}
+
+		infixExpression, ok := stmt.Expression.(*ast.InfixExpression)
+		if !assert.Truef(ok, "expression not of type *ast.InfixExpression %+v", stmt) {
+			assert.FailNow("")
+		}
+
+		if !assert.Equal(infixExpression.String(), test.expectedString) {
+			assert.FailNow("")
+		}
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	assert := assert.New(t)
 
