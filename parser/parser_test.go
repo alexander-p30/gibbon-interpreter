@@ -222,6 +222,9 @@ func TestExpressionOperatorPrecedence(t *testing.T) {
 		{[]byte(`a * b / c + d`), "(((a * b) / c) + d)"},
 		{[]byte(`!a <= b`), "((!a) <= b)"},
 		{[]byte(`3 + 4 * 5 == 3 * 1 + 4 * 5`), "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"},
+		{[]byte(`!a != !b`), "((!a) != (!b))"},
+		{[]byte(`!a >= !b`), "((!a) >= (!b))"},
+		{[]byte(`!a > !b < c`), "(((!a) > (!b)) < c)"},
 	}
 
 	for _, test := range tests {
