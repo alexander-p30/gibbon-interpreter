@@ -122,6 +122,46 @@ func TestIntegerLiteral(t *testing.T) {
 	testIntegerLiteral(t, integerExpression.Expression, 3)
 }
 
+func TestPrefixExpression(t *testing.T) {
+	tests := []struct {
+		input                []byte
+		expectedOperator     string
+		expectedIntegerValue int64
+	}{
+		{[]byte(`-5`), "-", 5},
+		{[]byte(`!2`), "!", 2},
+		{[]byte(`-7;`), "-", 7},
+		{[]byte(`+99182346;`), "+", 99182346},
+	}
+
+	for _, test := range tests {
+		assert := assert.New(t)
+
+		l := lexer.NewLexer(bytes.NewReader(test.input), "input")
+		parser := NewParser(l)
+		program := parser.ParseProgram()
+
+		ensureNoErrors(t, parser)
+
+		assert.Len(program.Statements, 1)
+
+		statement := program.Statements[0]
+		stmt, ok := statement.(*ast.ExpressionStatement)
+		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+			assert.FailNow("")
+		}
+
+		prefixExpression, ok := stmt.Expression.(*ast.PrefixExpression)
+		if !assert.True(ok, "expression not of type *ast.PrefixExpression") {
+			assert.FailNow("")
+		}
+
+		assert.Equal(prefixExpression.Operator, test.expectedOperator)
+
+		testIntegerLiteral(t, prefixExpression.Right, test.expectedIntegerValue)
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	assert := assert.New(t)
 
@@ -196,7 +236,7 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, expectedValue int64) *
 		assert.FailNow(t, "")
 	}
 
-	assert.Equal(t, integer.Value, int64(3))
+	assert.Equal(t, integer.Value, expectedValue)
 	assert.Equal(t, integer.TokenLiteral(), fmt.Sprintf("%d", expectedValue))
 
 	return integer

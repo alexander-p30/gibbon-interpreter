@@ -44,6 +44,9 @@ func (p *Parser) initializePrefixParsers() {
 	p.prefixExpressionParser = make(map[token.TokenType]prefixParserFn)
 	p.registerPrefixParser(token.IDENT, p.parseIdentifier)
 	p.registerPrefixParser(token.INT, p.parseIntegerLiteral)
+	p.registerPrefixParser(token.BANG, p.parsePrefixOperator)
+	p.registerPrefixParser(token.MINUS, p.parsePrefixOperator)
+	p.registerPrefixParser(token.PLUS, p.parsePrefixOperator)
 }
 
 func (p *Parser) registerPrefixParser(t token.TokenType, parser prefixParserFn) {
@@ -75,6 +78,13 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 	return &ast.IntegerLiteral{Token: p.currentToken, Value: value}
 }
 
+func (p *Parser) parsePrefixOperator() ast.Expression {
+	operator := p.currentToken.Literal
+	p.nextToken()
+	right := p.parseExpression(PREFIX)
+	return &ast.PrefixExpression{Token: p.currentToken, Operator: operator, Right: right}
+}
+
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{Statements: []ast.Statement{}}
 
@@ -98,6 +108,11 @@ func (p *Parser) Errors() []Error {
 func (p *Parser) peekError(expected token.TokenType) {
 	msg := fmt.Sprintf("expected next token to be %s, got %s instead", expected, p.peekToken.Type)
 	p.errors = append(p.errors, Error{message: msg, location: p.peekToken.Location})
+}
+
+func (p *Parser) noPrefixParserFnError(t token.TokenType) {
+	msg := fmt.Sprintf("token type %q has no registered prefix parser functions", t)
+	p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -169,10 +184,12 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	parserFn := p.prefixExpressionParser[p.currentToken.Type]
 
 	if parserFn == nil {
+		p.noPrefixParserFnError(p.currentToken.Type)
 		return nil
 	}
 
-	return parserFn()
+	leftExp := parserFn()
+	return leftExp
 }
 
 func (p *Parser) curTokenIs(t token.TokenType) bool {
@@ -193,3 +210,35 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	}
 }
 
+// func (p *Parser) parseExpression() *ast.Expression {
+// 	if buildsExpression(p.currentToken.Type) {
+// 	} else {
+// 		return nil
+// 	}
+// }
+
+var EXPRESSION_STARTING_TOKENS = []token.TokenType{token.PLUS, token.MINUS, token.BANG, token.IDENT, token.INT}
+var EXPRESSION_RELATIONAL_TOKENS = []token.TokenType{token.PLUS, token.MINUS, token.ASTERISK, token.SLASH, token.LT, token.GT, token.LTE, token.GTE, token.EQUAL, token.DIFFERENT}
+var EXPRESSION_FINISHING_TOKENS = []token.TokenType{token.IDENT, token.INT}
+
+func startsExpression(literal token.TokenType) bool {
+	return contains(EXPRESSION_STARTING_TOKENS, literal)
+}
+
+func finishesExpression(literal token.TokenType) bool {
+	return contains(EXPRESSION_FINISHING_TOKENS, literal)
+}
+
+func buildsExpression(literal token.TokenType) bool {
+	return contains(EXPRESSION_STARTING_TOKENS, literal) || contains(EXPRESSION_RELATIONAL_TOKENS, literal)
+}
+
+func contains[T comparable](container []T, element T) bool {
+	for _, t := range container {
+		if t == element {
+			return true
+		}
+	}
+
+	return false
+}
