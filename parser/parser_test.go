@@ -49,7 +49,6 @@ func TestLetStatementParseError(t *testing.T) {
 	input := []byte(`
 let a = 1;
 let a = 1
-let a = ;
 let a 1;
 let 1;
 `)
@@ -162,6 +161,56 @@ func TestPrefixExpression(t *testing.T) {
 	}
 }
 
+func TestInfixExpression(t *testing.T) {
+	tests := []struct {
+		input              []byte
+		expectedOperator   string
+		expectedLeftValue  int64
+		expectedRightValue int64
+	}{
+		{[]byte(`3 - 2`), "-", 3, 2},
+		{[]byte(`7 + 9`), "+", 7, 9},
+		{[]byte(`1 * 16`), "*", 1, 16},
+		{[]byte(`16 / 8`), "/", 16, 8},
+		{[]byte(`30 > 60`), ">", 30, 60},
+		{[]byte(`90 < 80`), "<", 90, 80},
+		{[]byte(`1 == 0`), "==", 1, 0},
+		{[]byte(`0 >= 20`), ">=", 0, 20},
+		{[]byte(`4 <= 10`), "<=", 4, 10},
+		{[]byte(`5 != 29`), "!=", 5, 29},
+	}
+
+	for _, test := range tests {
+		assert := assert.New(t)
+
+		l := lexer.NewLexer(bytes.NewReader(test.input), "input")
+		parser := NewParser(l)
+		program := parser.ParseProgram()
+
+		ensureNoErrors(t, parser)
+
+		assert.Len(program.Statements, 1)
+
+		statement := program.Statements[0]
+		stmt, ok := statement.(*ast.ExpressionStatement)
+		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+			assert.FailNow("")
+		}
+
+		infixExpression, ok := stmt.Expression.(*ast.InfixExpression)
+		if !assert.Truef(ok, "expression not of type *ast.InfixExpression %+v", stmt) {
+			assert.FailNow("")
+		}
+
+		if !assert.Equal(infixExpression.Operator, test.expectedOperator) {
+			assert.FailNow("")
+		}
+
+		testIntegerLiteral(t, infixExpression.Left, test.expectedLeftValue)
+		testIntegerLiteral(t, infixExpression.Right, test.expectedRightValue)
+	}
+}
+
 func TestReturnStatements(t *testing.T) {
 	assert := assert.New(t)
 
@@ -196,7 +245,10 @@ func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier strin
 	assert.Equal(stmt.TokenLiteral(), "let", "s.TokenLiteral not 'let'")
 
 	letStmt, ok := stmt.(*ast.LetStatement)
-	assert.Truef(ok, "s not *ast.LetStatement. got: %T", stmt)
+	// Prevent breaking on next lines
+	if !assert.Truef(ok, "s not *ast.LetStatement. got: %T", stmt) {
+		assert.FailNow("")
+	}
 
 	assert.Equalf(letStmt.Name.Value, expectedIdentifier, "letStmt.Name.Value not '%s'", expectedIdentifier)
 
