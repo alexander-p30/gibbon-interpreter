@@ -265,36 +265,3 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		return false
 	}
 }
-
-// func (p *Parser) parseExpression() *ast.Expression {
-// 	if buildsExpression(p.currentToken.Type) {
-// 	} else {
-// 		return nil
-// 	}
-// }
-
-var EXPRESSION_STARTING_TOKENS = []token.TokenType{token.PLUS, token.MINUS, token.BANG, token.IDENT, token.INT}
-var EXPRESSION_RELATIONAL_TOKENS = []token.TokenType{token.PLUS, token.MINUS, token.ASTERISK, token.SLASH, token.LT, token.GT, token.LTE, token.GTE, token.EQUAL, token.DIFFERENT}
-var EXPRESSION_FINISHING_TOKENS = []token.TokenType{token.IDENT, token.INT}
-
-func startsExpression(literal token.TokenType) bool {
-	return contains(EXPRESSION_STARTING_TOKENS, literal)
-}
-
-func finishesExpression(literal token.TokenType) bool {
-	return contains(EXPRESSION_FINISHING_TOKENS, literal)
-}
-
-func buildsExpression(literal token.TokenType) bool {
-	return contains(EXPRESSION_STARTING_TOKENS, literal) || contains(EXPRESSION_RELATIONAL_TOKENS, literal)
-}
-
-func contains[T comparable](container []T, element T) bool {
-	for _, t := range container {
-		if t == element {
-			return true
-		}
-	}
-
-	return false
-}
