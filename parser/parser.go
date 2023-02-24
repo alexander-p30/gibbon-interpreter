@@ -8,6 +8,11 @@ import (
 	"strconv"
 )
 
+type Error struct {
+	message  string
+	location token.TokenLocation
+}
+
 type prefixParserFn func() ast.Expression
 type infixParserFn func(left ast.Expression) ast.Expression
 
@@ -20,10 +25,7 @@ type Parser struct {
 	prefixExpressionParser map[token.TokenType]prefixParserFn
 }
 
-type Error struct {
-	message  string
-	location token.TokenLocation
-}
+// ============ initialization ============
 
 func NewParser(l *lexer.Lexer) *Parser {
 	p := &Parser{lexer: l, errors: []Error{}}
@@ -59,6 +61,8 @@ func (p *Parser) initializePrefixParsers() {
 	p.registerPrefixParser(token.PLUS, p.parsePrefixOperator)
 }
 
+// ============ mutation ============
+
 func (p *Parser) registerPrefixParser(t token.TokenType, parser prefixParserFn) {
 	p.prefixExpressionParser[t] = parser
 }
@@ -72,35 +76,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.lexer.NextToken()
 }
 
-func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
-}
-
-func (p *Parser) parseIntegerLiteral() ast.Expression {
-	value, err := strconv.ParseInt(p.currentToken.Literal, 10, 64)
-
-	if err != nil {
-		msg := fmt.Sprintf("Could not parse '%q' as integer literal", p.currentToken.Literal)
-		p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
-		return nil
-	}
-
-	return &ast.IntegerLiteral{Token: p.currentToken, Value: value}
-}
-
-func (p *Parser) parsePrefixOperator() ast.Expression {
-	operatorToken := p.currentToken
-	p.nextToken()
-	right := p.parseExpression(PREFIX)
-	return &ast.PrefixExpression{Token: operatorToken, Operator: operatorToken.Literal, Right: right}
-}
-
-func (p *Parser) parseInfixOperator(left ast.Expression) ast.Expression {
-	operatorToken := p.currentToken
-	p.nextToken()
-	right := p.parseExpression(p.getTokenPrecedence(operatorToken))
-	return &ast.InfixExpression{Token: operatorToken, Operator: operatorToken.Literal, Left: left, Right: right}
-}
+// ============ parsing ============
 
 func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{Statements: []ast.Statement{}}
@@ -118,25 +94,6 @@ func (p *Parser) ParseProgram() *ast.Program {
 	return program
 }
 
-func (p *Parser) Errors() []Error {
-	return p.errors
-}
-
-func (p *Parser) peekError(expected token.TokenType) {
-	msg := fmt.Sprintf("expected next token to be %s, got %s instead", expected, p.peekToken.Type)
-	p.errors = append(p.errors, Error{message: msg, location: p.peekToken.Location})
-}
-
-func (p *Parser) noPrefixParserFnError(t token.TokenType) {
-	msg := fmt.Sprintf("token type %q has no registered PREFIX parser functions", t)
-	p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
-}
-
-func (p *Parser) noInfixParserFnError(t token.TokenType) {
-	msg := fmt.Sprintf("token type %q has no registered INFIX parser functions", t)
-	p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
-}
-
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.currentToken.Type {
 	case token.LET:
@@ -146,6 +103,22 @@ func (p *Parser) parseStatement() ast.Statement {
 	default:
 		return p.parseExpressionStatement()
 	}
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	value, err := strconv.ParseInt(p.currentToken.Literal, 10, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("Could not parse '%q' as integer literal", p.currentToken.Literal)
+		p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
+		return nil
+	}
+
+	return &ast.IntegerLiteral{Token: p.currentToken, Value: value}
 }
 
 func (p *Parser) parseLetStatement() *ast.LetStatement {
@@ -191,6 +164,53 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefixParserFn := p.prefixExpressionParser[p.currentToken.Type]
+
+	if prefixParserFn == nil {
+		p.noPrefixParserFnError(p.currentToken.Type)
+		return nil
+	}
+
+	leftExp := prefixParserFn()
+
+	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.getTokenPrecedence(p.peekToken) {
+		infixParserFn := p.infixExpressionParser[p.peekToken.Type]
+
+		if infixParserFn == nil {
+			p.noInfixParserFnError(p.peekToken.Type)
+			return nil
+		}
+
+		p.nextToken()
+		leftExp = infixParserFn(leftExp)
+	}
+
+	return leftExp
+}
+
+func (p *Parser) parsePrefixOperator() ast.Expression {
+	operatorToken := p.currentToken
+	p.nextToken()
+	right := p.parseExpression(PREFIX)
+	return &ast.PrefixExpression{Token: operatorToken, Operator: operatorToken.Literal, Right: right}
+}
+
+func (p *Parser) parseInfixOperator(left ast.Expression) ast.Expression {
+	operatorToken := p.currentToken
+	p.nextToken()
+	right := p.parseExpression(p.getTokenPrecedence(operatorToken))
+
+	return &ast.InfixExpression{
+		Token:    operatorToken,
+		Operator: operatorToken.Literal,
+		Left:     left,
+		Right:    right,
+	}
+}
+
+// ============ helpers ============
+
 const (
 	_ int = iota
 	LOWEST
@@ -223,31 +243,6 @@ func (p *Parser) getTokenPrecedence(t token.Token) int {
 	return LOWEST
 }
 
-func (p *Parser) parseExpression(precedence int) ast.Expression {
-	prefixParserFn := p.prefixExpressionParser[p.currentToken.Type]
-
-	if prefixParserFn == nil {
-		p.noPrefixParserFnError(p.currentToken.Type)
-		return nil
-	}
-
-	leftExp := prefixParserFn()
-
-	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.getTokenPrecedence(p.peekToken) {
-		infixParserFn := p.infixExpressionParser[p.peekToken.Type]
-
-		if infixParserFn == nil {
-			p.noInfixParserFnError(p.peekToken.Type)
-			return nil
-		}
-
-		p.nextToken()
-		leftExp = infixParserFn(leftExp)
-	}
-
-	return leftExp
-}
-
 func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.currentToken.Type == t
 }
@@ -264,4 +259,25 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 		p.peekError(t)
 		return false
 	}
+}
+
+// ============ errors ============
+
+func (p *Parser) Errors() []Error {
+	return p.errors
+}
+
+func (p *Parser) peekError(expected token.TokenType) {
+	msg := fmt.Sprintf("expected next token to be %s, got %s instead", expected, p.peekToken.Type)
+	p.errors = append(p.errors, Error{message: msg, location: p.peekToken.Location})
+}
+
+func (p *Parser) noPrefixParserFnError(t token.TokenType) {
+	msg := fmt.Sprintf("token type %q has no registered PREFIX parser functions", t)
+	p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
+}
+
+func (p *Parser) noInfixParserFnError(t token.TokenType) {
+	msg := fmt.Sprintf("token type %q has no registered INFIX parser functions", t)
+	p.errors = append(p.errors, Error{message: msg, location: p.currentToken.Location})
 }

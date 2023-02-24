@@ -123,7 +123,12 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
-var multiCharOperatorsInitials = [...]byte{token.LTE[0], token.GTE[0], token.EQUAL[0], token.DIFFERENT[0]}
+var multiCharOperatorsInitials = [...]byte{
+	token.LTE[0],
+	token.GTE[0],
+	token.EQUAL[0],
+	token.DIFFERENT[0],
+}
 
 func isOperator(char byte) bool {
 	for _, multiCharOperatorInitial := range multiCharOperatorsInitials {
@@ -147,5 +152,12 @@ func (l *Lexer) readMultiCharToken(verifierFunc func(byte) bool) string {
 }
 
 func newToken(tokenType token.TokenType, tokenChar byte, bytePosition bytePosition) token.Token {
-	return token.Token{Type: tokenType, Literal: string(tokenChar), Location: token.TokenLocation{Line: bytePosition.line, FirstCharIndex: bytePosition.byte}}
+	return token.Token{
+		Type:    tokenType,
+		Literal: string(tokenChar),
+		Location: token.TokenLocation{
+			Line:           bytePosition.line,
+			FirstCharIndex: bytePosition.byte,
+		},
+	}
 }
