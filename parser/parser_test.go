@@ -24,9 +24,13 @@ let something = -47194738292;
 	program := parser.ParseProgram()
 	ensureNoErrors(t, parser)
 
-	assert.NotNil(program, "ParseProgram() returned nil")
+	if !assert.NotNil(program, "ParseProgram() returned nil") {
+		t.FailNow()
+	}
 
-	assert.Len(program.Statements, 3, "program.Statements does not contain 3 statements")
+	if !assert.Len(program.Statements, 3, "program.Statements does not contain 3 statements") {
+		t.FailNow()
+	}
 
 	tests := []struct {
 		expectedIdentifier string

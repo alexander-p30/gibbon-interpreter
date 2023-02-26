@@ -134,8 +134,13 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 		return nil
 	}
 
-	for p.curTokenIs(token.SEMICOLON) {
-		p.nextToken()
+	// advance the '=' token
+	p.nextToken()
+
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.SEMICOLON) {
+		return nil
 	}
 
 	return stmt
