@@ -24,5 +24,5 @@ func TestString(t *testing.T) {
 	}
 
 	expected := "let myVar = anotherVar;"
-	assert.Equal(t, program.String(), expected, "program.String did not correctly convert the AST")
+	assert.Equal(t, expected, program.String(), "program.String did not correctly convert the AST")
 }

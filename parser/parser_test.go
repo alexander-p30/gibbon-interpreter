@@ -99,8 +99,8 @@ func TestIdentifierExpression(t *testing.T) {
 		assert.FailNow("")
 	}
 
-	assert.Equal(identifier.Value, "someIdentifier")
-	assert.Equal(identifier.TokenLiteral(), "someIdentifier")
+	assert.Equal("someIdentifier", identifier.Value)
+	assert.Equal("someIdentifier", identifier.TokenLiteral())
 }
 
 func TestIntegerLiteral(t *testing.T) {
@@ -159,7 +159,7 @@ func TestPrefixExpression(t *testing.T) {
 			assert.FailNow("")
 		}
 
-		assert.Equal(prefixExpression.Operator, test.expectedOperator)
+		assert.Equal(test.expectedOperator, prefixExpression.Operator)
 
 		testIntegerLiteral(t, prefixExpression.Right, test.expectedIntegerValue)
 	}
@@ -279,7 +279,7 @@ return 993322;
 			continue
 		}
 
-		assert.Equal(returnStmt.TokenLiteral(), "return", "returnStmt.TokenLiteral not 'return'")
+		assert.Equal("return", returnStmt.TokenLiteral(), "returnStmt.TokenLiteral not 'return'")
 	}
 }
 
@@ -316,14 +316,14 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, expectedValue int64) b
 		assert.FailNow("")
 	}
 
-	assert.Equal(integer.Value, expectedValue)
-	return assert.Equal(integer.TokenLiteral(), fmt.Sprintf("%d", expectedValue))
+	assert.Equal(expectedValue, integer.Value)
+	return assert.Equal(fmt.Sprintf("%d", expectedValue), integer.TokenLiteral())
 }
 
 func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier string) bool {
 	assert := assert.New(t)
 
-	assert.Equal(stmt.TokenLiteral(), "let", "s.TokenLiteral not 'let'")
+	assert.Equal("let", stmt.TokenLiteral(), "s.TokenLiteral not 'let'")
 
 	letStmt, ok := stmt.(*ast.LetStatement)
 	// Prevent breaking on next lines
@@ -331,9 +331,9 @@ func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier strin
 		assert.FailNow("")
 	}
 
-	assert.Equalf(letStmt.Name.Value, expectedIdentifier, "letStmt.Name.Value not '%s'", expectedIdentifier)
+	assert.Equalf(expectedIdentifier, letStmt.Name.Value, "letStmt.Name.Value not '%s'", expectedIdentifier)
 
-	assert.Equalf(letStmt.Name.TokenLiteral(), expectedIdentifier, "letStmt.Name.TokenLiteral() not '%s'", expectedIdentifier)
+	assert.Equalf(expectedIdentifier, letStmt.Name.TokenLiteral(), "letStmt.Name.TokenLiteral() not '%s'", expectedIdentifier)
 
 	return true
 }
