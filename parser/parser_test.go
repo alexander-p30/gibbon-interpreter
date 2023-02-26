@@ -91,12 +91,12 @@ func TestIdentifierExpression(t *testing.T) {
 	statement := program.Statements[0]
 	identifierExpression, ok := statement.(*ast.ExpressionStatement)
 	if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	identifier, ok := identifierExpression.Expression.(*ast.Identifier)
 	if !assert.True(ok, "statement not of type *ast.Identifier") {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	assert.Equal("someIdentifier", identifier.Value)
@@ -119,7 +119,7 @@ func TestIntegerLiteral(t *testing.T) {
 	statement := program.Statements[0]
 	integerExpression, ok := statement.(*ast.ExpressionStatement)
 	if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	testIntegerLiteral(t, integerExpression.Expression, 3)
@@ -151,12 +151,12 @@ func TestPrefixExpression(t *testing.T) {
 		statement := program.Statements[0]
 		stmt, ok := statement.(*ast.ExpressionStatement)
 		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
-			assert.FailNow("")
+			t.FailNow()
 		}
 
 		prefixExpression, ok := stmt.Expression.(*ast.PrefixExpression)
 		if !assert.True(ok, "expression not of type *ast.PrefixExpression") {
-			assert.FailNow("")
+			t.FailNow()
 		}
 
 		assert.Equal(test.expectedOperator, prefixExpression.Operator)
@@ -198,7 +198,7 @@ func TestInfixExpression(t *testing.T) {
 		statement := program.Statements[0]
 		stmt, ok := statement.(*ast.ExpressionStatement)
 		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
-			assert.FailNow("")
+			t.FailNow()
 		}
 
 		testInfixExpression(
@@ -241,16 +241,16 @@ func TestExpressionOperatorPrecedence(t *testing.T) {
 		statement := program.Statements[0]
 		stmt, ok := statement.(*ast.ExpressionStatement)
 		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
-			assert.FailNow("")
+			t.FailNow()
 		}
 
 		infixExpression, ok := stmt.Expression.(*ast.InfixExpression)
 		if !assert.Truef(ok, "expression not of type *ast.InfixExpression %+v", stmt) {
-			assert.FailNow("")
+			t.FailNow()
 		}
 
 		if !assert.Equal(infixExpression.String(), test.expectedString) {
-			assert.FailNow("")
+			t.FailNow()
 		}
 	}
 }
@@ -313,7 +313,7 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, expectedValue int64) b
 
 	integer, ok := exp.(*ast.IntegerLiteral)
 	if !assert.True(ok, "statement not of type *ast.IntegerLiteral") {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	assert.Equal(expectedValue, integer.Value)
@@ -328,7 +328,7 @@ func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier strin
 	letStmt, ok := stmt.(*ast.LetStatement)
 	// Prevent breaking on next lines
 	if !assert.Truef(ok, "s not *ast.LetStatement. got: %T", stmt) {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	assert.Equalf(expectedIdentifier, letStmt.Name.Value, "letStmt.Name.Value not '%s'", expectedIdentifier)
@@ -344,15 +344,15 @@ func testIdentifier(t *testing.T, exp ast.Expression, expectedIdentifier string)
 	identifier, ok := exp.(*ast.Identifier)
 
 	if !assert.Truef(ok, "Expression not of type *ast.Identifier, instead it is %T", identifier) {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	if !assert.Equal(expectedIdentifier, identifier.Value) {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	if !assert.Equal(expectedIdentifier, identifier.TokenLiteral()) {
-		assert.FailNow("")
+		t.FailNow()
 	}
 
 	return true
