@@ -6,6 +6,7 @@ import (
 	"gibbon/lexer"
 	"gibbon/token"
 	"strconv"
+	"strings"
 )
 
 type Error struct {
@@ -55,6 +56,8 @@ func (p *Parser) initializeInfixParsers() {
 func (p *Parser) initializePrefixParsers() {
 	p.prefixExpressionParser = make(map[token.TokenType]prefixParserFn)
 	p.registerPrefixParser(token.IDENT, p.parseIdentifier)
+	p.registerPrefixParser(token.TRUE, p.parseBoolean)
+	p.registerPrefixParser(token.FALSE, p.parseBoolean)
 	p.registerPrefixParser(token.INT, p.parseIntegerLiteral)
 	p.registerPrefixParser(token.BANG, p.parsePrefixOperator)
 	p.registerPrefixParser(token.MINUS, p.parsePrefixOperator)
@@ -107,6 +110,11 @@ func (p *Parser) parseStatement() ast.Statement {
 
 func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.currentToken, Value: p.currentToken.Literal}
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	value := strings.ToUpper(p.currentToken.Literal) == token.TRUE
+	return &ast.Boolean{Token: p.currentToken, Value: value}
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {

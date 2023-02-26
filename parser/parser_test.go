@@ -106,6 +106,51 @@ func TestIdentifierExpression(t *testing.T) {
 	assert.Equal("someIdentifier", identifier.TokenLiteral())
 }
 
+func TestBooleanExpression(t *testing.T) {
+	assert := assert.New(t)
+
+	input := []byte(`true;false;`)
+	l := lexer.NewLexer(bytes.NewReader(input), "input")
+	parser := NewParser(l)
+	program := parser.ParseProgram()
+	ensureNoErrors(t, parser)
+
+	stmts := program.Statements
+
+	if !assert.Len(stmts, 2) {
+		t.FailNow()
+	}
+
+	tests := []struct {
+		statement       ast.Statement
+		expectedLiteral string
+		expectedValue   bool
+	}{
+		{stmts[0], "true", true},
+		{stmts[1], "false", false},
+	}
+
+	for _, test := range tests {
+		booleanExpression, ok := test.statement.(*ast.ExpressionStatement)
+		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+			t.FailNow()
+		}
+
+		boolean, ok := booleanExpression.Expression.(*ast.Boolean)
+		if !assert.True(ok, "statement not of type *ast.Boolean") {
+			t.FailNow()
+		}
+
+		if !assert.Equal(test.expectedValue, boolean.Value) {
+			t.FailNow()
+		}
+
+		if !assert.Equal(test.expectedLiteral, boolean.TokenLiteral()) {
+			t.FailNow()
+		}
+	}
+}
+
 func TestIntegerLiteral(t *testing.T) {
 	assert := assert.New(t)
 
