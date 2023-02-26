@@ -168,7 +168,7 @@ func TestPrefixExpression(t *testing.T) {
 	}
 }
 
-func TestInfixExpression(t *testing.T) {
+func TestInfixExpressionWithIntegerLiterals(t *testing.T) {
 	tests := []struct {
 		input              []byte
 		expectedOperator   string
@@ -214,6 +214,51 @@ func TestInfixExpression(t *testing.T) {
 	}
 }
 
+func TestInfixExpressionWithIdentifiers(t *testing.T) {
+	tests := []struct {
+		input              []byte
+		expectedOperator   string
+		expectedLeftValue  string
+		expectedRightValue string
+	}{
+		{[]byte(`left - right`), "-", "left", "right"},
+		{[]byte(`win + win`), "+", "win", "win"},
+		{[]byte(`apples * price`), "*", "apples", "price"},
+		{[]byte(`total_price / quantity`), "/", "total_price", "quantity"},
+		{[]byte(`something == another_thing`), "==", "something", "another_thing"},
+		{[]byte(`low <= high`), "<=", "low", "high"},
+		{[]byte(`much >= little`), ">=", "much", "little"},
+		{[]byte(`dwigth != spitz`), "!=", "dwigth", "spitz"},
+		{[]byte(`a > b`), ">", "a", "b"},
+		{[]byte(`c < d`), "<", "c", "d"},
+	}
+
+	for _, test := range tests {
+		assert := assert.New(t)
+
+		l := lexer.NewLexer(bytes.NewReader(test.input), "input")
+		parser := NewParser(l)
+		program := parser.ParseProgram()
+
+		ensureNoErrors(t, parser)
+
+		assert.Len(program.Statements, 1)
+
+		statement := program.Statements[0]
+		stmt, ok := statement.(*ast.ExpressionStatement)
+		if !assert.True(ok, "statement not of type *ast.ExpressionStatement") {
+			t.FailNow()
+		}
+
+		testInfixExpression(
+			t,
+			stmt.Expression,
+			test.expectedLeftValue,
+			test.expectedOperator,
+			test.expectedRightValue,
+		)
+	}
+}
 func TestExpressionOperatorPrecedence(t *testing.T) {
 	tests := []struct {
 		input          []byte
@@ -228,6 +273,7 @@ func TestExpressionOperatorPrecedence(t *testing.T) {
 		{[]byte(`!a != !b`), "((!a) != (!b))"},
 		{[]byte(`!a >= !b`), "((!a) >= (!b))"},
 		{[]byte(`!a > !b < c`), "(((!a) > (!b)) < c)"},
+		{[]byte(`apples * price + - discount * buyers`), "((apples * price) + ((-discount) * buyers))"},
 	}
 
 	for _, test := range tests {
