@@ -197,17 +197,13 @@ func TestInfixExpression(t *testing.T) {
 			assert.FailNow("")
 		}
 
-		infixExpression, ok := stmt.Expression.(*ast.InfixExpression)
-		if !assert.Truef(ok, "expression not of type *ast.InfixExpression %+v", stmt) {
-			assert.FailNow("")
-		}
-
-		if !assert.Equal(infixExpression.Operator, test.expectedOperator) {
-			assert.FailNow("")
-		}
-
-		testIntegerLiteral(t, infixExpression.Left, test.expectedLeftValue)
-		testIntegerLiteral(t, infixExpression.Right, test.expectedRightValue)
+		testInfixExpression(
+			t,
+			stmt.Expression,
+			test.expectedLeftValue,
+			test.expectedOperator,
+			test.expectedRightValue,
+		)
 	}
 }
 
@@ -283,24 +279,6 @@ return 993322;
 	}
 }
 
-func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier string) bool {
-	assert := assert.New(t)
-
-	assert.Equal(stmt.TokenLiteral(), "let", "s.TokenLiteral not 'let'")
-
-	letStmt, ok := stmt.(*ast.LetStatement)
-	// Prevent breaking on next lines
-	if !assert.Truef(ok, "s not *ast.LetStatement. got: %T", stmt) {
-		assert.FailNow("")
-	}
-
-	assert.Equalf(letStmt.Name.Value, expectedIdentifier, "letStmt.Name.Value not '%s'", expectedIdentifier)
-
-	assert.Equalf(letStmt.Name.TokenLiteral(), expectedIdentifier, "letStmt.Name.TokenLiteral() not '%s'", expectedIdentifier)
-
-	return true
-}
-
 // ------HELPERS------
 
 func ensureNoErrors(t *testing.T, p *Parser) {
@@ -326,14 +304,97 @@ func ensureNoErrors(t *testing.T, p *Parser) {
 	t.FailNow()
 }
 
-func testIntegerLiteral(t *testing.T, exp ast.Expression, expectedValue int64) *ast.IntegerLiteral {
+func testIntegerLiteral(t *testing.T, exp ast.Expression, expectedValue int64) bool {
+	assert := assert.New(t)
+
 	integer, ok := exp.(*ast.IntegerLiteral)
-	if !assert.True(t, ok, "statement not of type *ast.IntegerLiteral") {
-		assert.FailNow(t, "")
+	if !assert.True(ok, "statement not of type *ast.IntegerLiteral") {
+		assert.FailNow("")
 	}
 
-	assert.Equal(t, integer.Value, expectedValue)
-	assert.Equal(t, integer.TokenLiteral(), fmt.Sprintf("%d", expectedValue))
+	assert.Equal(integer.Value, expectedValue)
+	return assert.Equal(integer.TokenLiteral(), fmt.Sprintf("%d", expectedValue))
+}
 
-	return integer
+func testLetStatement(t *testing.T, stmt ast.Statement, expectedIdentifier string) bool {
+	assert := assert.New(t)
+
+	assert.Equal(stmt.TokenLiteral(), "let", "s.TokenLiteral not 'let'")
+
+	letStmt, ok := stmt.(*ast.LetStatement)
+	// Prevent breaking on next lines
+	if !assert.Truef(ok, "s not *ast.LetStatement. got: %T", stmt) {
+		assert.FailNow("")
+	}
+
+	assert.Equalf(letStmt.Name.Value, expectedIdentifier, "letStmt.Name.Value not '%s'", expectedIdentifier)
+
+	assert.Equalf(letStmt.Name.TokenLiteral(), expectedIdentifier, "letStmt.Name.TokenLiteral() not '%s'", expectedIdentifier)
+
+	return true
+}
+
+func testIdentifier(t *testing.T, exp ast.Expression, expectedIdentifier string) bool {
+	assert := assert.New(t)
+
+	identifier, ok := exp.(*ast.Identifier)
+
+	if !assert.Truef(ok, "Expression not of type *ast.Identifier, instead it is %T", identifier) {
+		assert.FailNow("")
+	}
+
+	if !assert.Equal(expectedIdentifier, identifier.Value) {
+		assert.FailNow("")
+	}
+
+	if !assert.Equal(expectedIdentifier, identifier.TokenLiteral()) {
+		assert.FailNow("")
+	}
+
+	return true
+}
+
+func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{}) bool {
+	switch v := expected.(type) {
+	case int:
+		return testIntegerLiteral(t, exp, int64(v))
+	case int64:
+		return testIntegerLiteral(t, exp, v)
+	case string:
+		return testIdentifier(t, exp, v)
+	}
+
+	t.Errorf("expression type not valid, got=%T", exp)
+	t.FailNow()
+	return false
+}
+
+func testInfixExpression(
+	t *testing.T,
+	exp ast.Expression,
+	left interface{},
+	operator string,
+	right interface{},
+) bool {
+	infixExpression, ok := exp.(*ast.InfixExpression)
+
+	assert := assert.New(t)
+
+	if !assert.Truef(ok, "Received expression not of type *ast.InfixExpression, got=%T", exp) {
+		t.FailNow()
+	}
+
+	if !testLiteralExpression(t, infixExpression.Left, left) {
+		t.FailNow()
+	}
+
+	if !assert.Equal(operator, infixExpression.Operator) {
+		t.FailNow()
+	}
+
+	if !testLiteralExpression(t, infixExpression.Right, right) {
+		t.FailNow()
+	}
+
+	return true
 }
