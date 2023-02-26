@@ -50,8 +50,7 @@ let something = -47194738292;
 func TestLetStatementParseError(t *testing.T) {
 	assert := assert.New(t)
 
-	input := []byte(`
-let a = 1;
+	input := []byte(`let a = 1;
 let a = 1
 let a 1;
 let 1;
@@ -62,7 +61,7 @@ let 1;
 	parser.ParseProgram()
 	errors := parser.Errors()
 
-	if !assert.Len(errors, 2) {
+	if !assert.Len(errors, 3) {
 		for i, err := range errors {
 			t.Errorf("Error [%d] %s:%d:%d: \"%s\"",
 				i,
@@ -73,6 +72,10 @@ let 1;
 			)
 		}
 	}
+
+	testError(t, errors[0], "expected next token to be ;", 3, 1)
+	testError(t, errors[1], "expected next token to be =", 3, 7)
+	testError(t, errors[2], "expected next token to be IDENT", 4, 5)
 }
 
 func TestIdentifierExpression(t *testing.T) {
@@ -401,4 +404,26 @@ func testInfixExpression(
 	}
 
 	return true
+}
+
+func testError(
+	t *testing.T,
+	error Error,
+	containedMessage string,
+	expectedLine int,
+	expectedCol int,
+) {
+	assert := assert.New(t)
+
+	if !assert.Contains(error.message, containedMessage) {
+		t.FailNow()
+	}
+
+	if !assert.Equal(uint(expectedLine), error.location.Line) {
+		t.FailNow()
+	}
+
+	if !assert.Equal(uint(expectedCol), error.location.FirstCharIndex) {
+		t.FailNow()
+	}
 }
