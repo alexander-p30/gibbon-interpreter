@@ -18,39 +18,39 @@ func TestNextTokenWithBaseTokens(t *testing.T) {
 		expectedLocationLine      uint
 		expectedLocationFirstChar uint
 	}{
-		{token.ASSIGN, "=", 0, 0},
-		{token.LPAREN, "(", 0, 1},
-		{token.PLUS, "+", 0, 2},
-		{token.RPAREN, ")", 0, 3},
-		{token.LBRACE, "{", 0, 4},
-		{token.RBRACE, "}", 0, 5},
-		{token.COMMA, ",", 0, 6},
-		{token.SEMICOLON, ";", 0, 7},
-		{token.MINUS, "-", 0, 8},
-		{token.BANG, "!", 0, 9},
-		{token.ASTERISK, "*", 0, 10},
-		{token.SLASH, "/", 0, 11},
-		{token.LT, "<", 0, 12},
-		{token.GT, ">", 0, 14},
-		{token.EOF, "", 0, 15},
+		{token.ASSIGN, "=", 1, 1},
+		{token.LPAREN, "(", 1, 2},
+		{token.PLUS, "+", 1, 3},
+		{token.RPAREN, ")", 1, 4},
+		{token.LBRACE, "{", 1, 5},
+		{token.RBRACE, "}", 1, 6},
+		{token.COMMA, ",", 1, 7},
+		{token.SEMICOLON, ";", 1, 8},
+		{token.MINUS, "-", 1, 9},
+		{token.BANG, "!", 1, 10},
+		{token.ASTERISK, "*", 1, 11},
+		{token.SLASH, "/", 1, 12},
+		{token.LT, "<", 1, 13},
+		{token.GT, ">", 1, 15},
+		{token.EOF, "", 1, 16},
 	}
 
 	l := NewLexer(input, "filename")
 
-	for _, test := range tests {
+	for i, test := range tests {
 		token := l.NextToken()
 
-		if !assert.Equal(token.Type, test.expectedType) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedType, token.Type) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
-		if !assert.Equal(token.Literal, test.expectedLiteral) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedLiteral, token.Literal) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
-		if !assert.Equal(token.Location.Line, test.expectedLocationLine) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedLocationLine, token.Location.Line) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
-		if !assert.Equal(token.Location.FirstCharIndex, test.expectedLocationFirstChar) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedLocationFirstChar, token.Location.FirstCharIndex) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
 	}
 }
@@ -81,80 +81,80 @@ func TestNextTokenWithCode(t *testing.T) {
 		expectedLocationLine      uint
 		expectedLocationFirstChar uint
 	}{
-		{token.LET, "let", 0, 0},
-		{token.IDENT, "five", 0, 4},
-		{token.ASSIGN, "=", 0, 9},
-		{token.INT, "5", 0, 11},
-		{token.SEMICOLON, ";", 0, 12},
-		{token.LET, "let", 1, 2},
-		{token.IDENT, "ten", 1, 6},
+		{token.LET, "let", 1, 1},
+		{token.IDENT, "five", 1, 5},
 		{token.ASSIGN, "=", 1, 10},
-		{token.INT, "10", 1, 12},
-		{token.SEMICOLON, ";", 1, 14},
-		{token.LET, "let", 3, 2},
-		{token.IDENT, "add", 3, 6},
-		{token.ASSIGN, "=", 3, 10},
-		{token.FUNCTION, "fn", 3, 12},
-		{token.LPAREN, "(", 3, 14},
-		{token.IDENT, "x", 3, 15},
-		{token.COMMA, ",", 3, 16},
-		{token.IDENT, "y", 3, 18},
-		{token.RPAREN, ")", 3, 19},
-		{token.LBRACE, "{", 3, 21},
-		{token.IDENT, "x", 4, 4},
-		{token.PLUS, "+", 4, 6},
-		{token.IDENT, "y", 4, 8},
-		{token.SEMICOLON, ";", 4, 9},
-		{token.RBRACE, "}", 5, 2},
-		{token.SEMICOLON, ";", 5, 3},
-		{token.IF, "if", 7, 2},
-		{token.LPAREN, "(", 7, 4},
-		{token.BANG, "!", 7, 5},
-		{token.TRUE, "true", 7, 6},
-		{token.RPAREN, ")", 7, 10},
-		{token.LBRACE, "{", 7, 12},
-		{token.RETURN, "return", 8, 4},
-		{token.FALSE, "false", 8, 11},
-		{token.SEMICOLON, ";", 8, 16},
-		{token.RBRACE, "}", 9, 2},
-		{token.INT, "5", 11, 2},
-		{token.EQUAL, "==", 11, 4},
-		{token.INT, "10", 11, 7},
-		{token.GTE, ">=", 12, 2},
-		{token.LTE, "<=", 12, 5},
-		{token.ILLEGAL, "<>", 12, 8},
-		{token.DIFFERENT, "!=", 12, 11},
-		{token.LET, "let", 14, 2},
-		{token.IDENT, "result", 14, 6},
-		{token.ASSIGN, "=", 14, 13},
-		{token.IDENT, "add", 14, 15},
-		{token.LPAREN, "(", 14, 18},
-		{token.IDENT, "five", 14, 19},
-		{token.COMMA, ",", 14, 23},
-		{token.IDENT, "ten", 14, 25},
-		{token.RPAREN, ")", 14, 28},
-		{token.SEMICOLON, ";", 14, 29},
-		{token.ILLEGAL, "'", 15, 2},
-		{token.ILLEGAL, "'", 15, 3},
-		{token.EOF, "", 15, 4},
+		{token.INT, "5", 1, 12},
+		{token.SEMICOLON, ";", 1, 13},
+		{token.LET, "let", 2, 3},
+		{token.IDENT, "ten", 2, 7},
+		{token.ASSIGN, "=", 2, 11},
+		{token.INT, "10", 2, 13},
+		{token.SEMICOLON, ";", 2, 15},
+		{token.LET, "let", 4, 3},
+		{token.IDENT, "add", 4, 7},
+		{token.ASSIGN, "=", 4, 11},
+		{token.FUNCTION, "fn", 4, 13},
+		{token.LPAREN, "(", 4, 15},
+		{token.IDENT, "x", 4, 16},
+		{token.COMMA, ",", 4, 17},
+		{token.IDENT, "y", 4, 19},
+		{token.RPAREN, ")", 4, 20},
+		{token.LBRACE, "{", 4, 22},
+		{token.IDENT, "x", 5, 5},
+		{token.PLUS, "+", 5, 7},
+		{token.IDENT, "y", 5, 9},
+		{token.SEMICOLON, ";", 5, 10},
+		{token.RBRACE, "}", 6, 3},
+		{token.SEMICOLON, ";", 6, 4},
+		{token.IF, "if", 8, 3},
+		{token.LPAREN, "(", 8, 5},
+		{token.BANG, "!", 8, 6},
+		{token.TRUE, "true", 8, 7},
+		{token.RPAREN, ")", 8, 11},
+		{token.LBRACE, "{", 8, 13},
+		{token.RETURN, "return", 9, 5},
+		{token.FALSE, "false", 9, 12},
+		{token.SEMICOLON, ";", 9, 17},
+		{token.RBRACE, "}", 10, 3},
+		{token.INT, "5", 12, 3},
+		{token.EQUAL, "==", 12, 5},
+		{token.INT, "10", 12, 8},
+		{token.GTE, ">=", 13, 3},
+		{token.LTE, "<=", 13, 6},
+		{token.ILLEGAL, "<>", 13, 9},
+		{token.DIFFERENT, "!=", 13, 12},
+		{token.LET, "let", 15, 3},
+		{token.IDENT, "result", 15, 7},
+		{token.ASSIGN, "=", 15, 14},
+		{token.IDENT, "add", 15, 16},
+		{token.LPAREN, "(", 15, 19},
+		{token.IDENT, "five", 15, 20},
+		{token.COMMA, ",", 15, 24},
+		{token.IDENT, "ten", 15, 26},
+		{token.RPAREN, ")", 15, 29},
+		{token.SEMICOLON, ";", 15, 30},
+		{token.ILLEGAL, "'", 16, 3},
+		{token.ILLEGAL, "'", 16, 4},
+		{token.EOF, "", 16, 5},
 	}
 
 	l := NewLexer(input, "filename")
 
-	for _, test := range tests {
+	for i, test := range tests {
 		token := l.NextToken()
 
-		if !assert.Equal(token.Type, test.expectedType) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedType, token.Type) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
-		if !assert.Equal(token.Literal, test.expectedLiteral) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedLiteral, token.Literal) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
-		if !assert.Equal(token.Location.Line, test.expectedLocationLine) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedLocationLine, token.Location.Line) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
-		if !assert.Equal(token.Location.FirstCharIndex, test.expectedLocationFirstChar) {
-			assert.FailNow("")
+		if !assert.Equal(test.expectedLocationFirstChar, token.Location.FirstCharIndex) {
+			assert.FailNowf("", "Failed on test line %d", i)
 		}
 	}
 }

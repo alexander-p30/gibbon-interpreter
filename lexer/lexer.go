@@ -22,7 +22,15 @@ type Lexer struct {
 }
 
 func NewLexer(input io.ByteReader, fileName string) *Lexer {
-	l := &Lexer{input: input, fileName: fileName}
+	initialPosition := bytePosition{line: 1, byte: 1}
+
+	l := &Lexer{
+		input:               input,
+		fileName:            fileName,
+		currentCharPosition: initialPosition,
+		nextCharPosition:    initialPosition,
+	}
+
 	l.readChar()
 	return l
 }
@@ -36,14 +44,15 @@ func (l *Lexer) readChar() {
 
 	l.currentChar = byte
 
-	l.currentCharPosition = l.nextCharPosition
+	l.currentCharPosition.line = l.nextCharPosition.line
+	l.currentCharPosition.byte = l.nextCharPosition.byte
 
 	if err == io.EOF {
 		l.currentCharPosition = l.nextCharPosition
 		return
 	} else if byte == '\n' {
 		l.nextCharPosition.line++
-		l.nextCharPosition.byte = 0
+		l.nextCharPosition.byte = 1
 	} else {
 		l.nextCharPosition.byte++
 	}
